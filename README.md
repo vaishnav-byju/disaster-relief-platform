@@ -21,3 +21,4 @@ A secure, scalable, cloud-based web application to coordinate disaster relief ef
 - `infra/` → Infrastructure as Code
 - `scripts/` → Deployment scripts
 - `docs/` → Documentation & screenshots
+CI/CD TEST
