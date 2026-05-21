@@ -18,8 +18,8 @@ jobs:
           SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           HOST: ${{ secrets.EC2_HOST }}
         run: |
-          # Write the SSH key properly
-          printf "%s" "$SSH_KEY" > key.pem
+          # Write the SSH key properly with preserved newlines
+          echo "${SSH_KEY}" > key.pem
           chmod 600 key.pem
 
           # Debug: confirm file exists
@@ -27,11 +27,11 @@ jobs:
           head -n 5 key.pem
 
           # Connect and deploy
-          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$HOST "
-            cd /home/ubuntu/disaster_relief &&
-            git pull &&
-            docker build -t relief-app . &&
-            docker stop relief-app || true &&
-            docker rm relief-app || true &&
+          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$HOST << 'EOF'
+            cd /home/ubuntu/disaster_relief
+            git pull
+            docker build -t relief-app .
+            docker stop relief-app || true
+            docker rm relief-app || true
             docker run -d -p 8501:8501 --name relief-app relief-app
-          "
+          EOF
