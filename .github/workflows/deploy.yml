@@ -1,0 +1,29 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to EC2
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          echo "$SSH_KEY" > key.pem
+          chmod 600 key.pem
+          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$HOST "
+            cd /home/ubuntu/disaster_relief &&
+            git pull &&
+            docker build -t relief-app . &&
+            docker stop relief-app || true &&
+            docker rm relief-app || true &&
+            docker run -d -p 8501:8501 --name relief-app relief-app
+          "
