@@ -13,20 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2
-        env:
-          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-          HOST: ${{ secrets.EC2_HOST }}
+      - name: Setup SSH key
         run: |
-          # Write the SSH key properly with preserved newlines
-          echo "${SSH_KEY}" > key.pem
+          cat > key.pem << 'EOF'
+          ${{ secrets.EC2_SSH_KEY }}
+          EOF
           chmod 600 key.pem
 
-          # Debug: confirm file exists
-          ls -l key.pem
-          head -n 5 key.pem
-
-          # Connect and deploy
+      - name: Deploy to EC2
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$HOST << 'EOF'
             cd /home/ubuntu/disaster_relief
             git pull
