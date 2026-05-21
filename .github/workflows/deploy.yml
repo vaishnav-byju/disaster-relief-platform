@@ -18,13 +18,20 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Deploy to EC2
+      - name: Deploy to EC2 (auto fix missing folder)
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
 
+            if [ ! -d ~/disaster-relief-platform ]; then
+              echo "Repo not found, cloning..."
+              git clone https://github.com/vaishnav-byju/disaster-relief-platform.git ~/disaster-relief-platform
+            fi
+
             cd ~/disaster-relief-platform || exit 1
+
             git pull origin main
 
+            echo "Restarting app..."
             sudo systemctl restart app.service || true
 
           EOF
