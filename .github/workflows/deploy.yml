@@ -6,29 +6,25 @@ on:
       - main
 
 jobs:
-  build-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Setup SSH key
         run: |
-          cat > key.pem << 'EOF'
-          ${{ secrets.EC2_SSH_KEY }}
-          EOF
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
 
       - name: Deploy to EC2
-        env:
-          HOST: ${{ secrets.EC2_HOST }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$HOST << 'EOF'
-            cd /home/ubuntu/disaster_relief
-            git pull
-            docker build -t relief-app .
-            docker stop relief-app || true
-            docker rm relief-app || true
-            docker run -d -p 8501:8501 --name relief-app relief-app
+          ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+
+            cd ~/disaster-relief-platform || exit 1
+            git pull origin main
+
+            sudo systemctl restart app.service || true
+
           EOF
