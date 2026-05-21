@@ -2,7 +2,8 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build-deploy:
@@ -17,8 +18,15 @@ jobs:
           SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           HOST: ${{ secrets.EC2_HOST }}
         run: |
+          # Write the SSH key properly
           printf "%s" "$SSH_KEY" > key.pem
           chmod 600 key.pem
+
+          # Debug: confirm file exists
+          ls -l key.pem
+          head -n 5 key.pem
+
+          # Connect and deploy
           ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$HOST "
             cd /home/ubuntu/disaster_relief &&
             git pull &&
