@@ -26,7 +26,7 @@ bcrypt = Bcrypt(app)
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=[]
 )
 limiter.init_app(app)
 
@@ -103,6 +103,7 @@ class User(db.Model):
 # ==========================
 
 @app.route("/")
+@limiter.exempt
 def home():
 
     return render_template(
@@ -573,17 +574,14 @@ def logout():
 # ==========================
 
 @app.after_request
-def apply_csp(response):
+def apply_security_headers(response):
 
-    response.headers[
-        "Content-Security-Policy"
-    ] = (
+    response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline' "
         "https://cdn.jsdelivr.net "
         "https://cdnjs.cloudflare.com; "
-        "script-src 'self' "
-        "'unsafe-inline' "
+        "script-src 'self' 'unsafe-inline' "
         "https://cdn.jsdelivr.net; "
         "img-src 'self' data: "
         "https://images.unsplash.com; "
@@ -591,8 +589,12 @@ def apply_csp(response):
         "https://cdnjs.cloudflare.com;"
     )
 
-    return response
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
 
+    return response
 
 # ==========================
 # RUN APP
